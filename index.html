@@ -23,7 +23,7 @@
   <!-- Pantalla de carga -->
   <div id="loading-screen">
     <div class="loader-logo">
-      <img src="assets/estratek-logo.svg" alt="Estratek" />
+      <img src="assets/estratek-logo-white.svg" alt="Estratek" />
     </div>
     <div class="loader-bar"><div class="loader-bar-fill" id="loader-fill"></div></div>
     <div class="loader-text" id="loader-text">Iniciando viaje cósmico…</div>
@@ -31,6 +31,15 @@
 
   <!-- Canvas principal -->
   <canvas id="scene"></canvas>
+
+  <!-- Intro cinemática: logo blanco grande sobre el universo -->
+  <div id="intro-overlay" class="intro-hidden">
+    <img src="assets/estratek-logo-white.svg" alt="Estratek" id="intro-logo" />
+    <div id="intro-tagline">UNA EXPERIENCIA INTERACTIVA</div>
+  </div>
+
+  <!-- Botón para saltar la intro -->
+  <button id="skip-intro" class="skip-intro-hidden">Saltar intro ›</button>
 
   <!-- Top bar -->
   <header class="topbar glass">
