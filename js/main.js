@@ -78,7 +78,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 0.82; // suavizado para que el Sol no eclipse a los planetas
 
 // ---------- Controles de cámara ----------
 const controls = new OrbitControls(camera, canvas);
@@ -124,12 +124,14 @@ function loadTex(url, opts = {}) {
 }
 
 // ---------- Iluminación ----------
-const sunLight = new THREE.PointLight(0xffffff, 3.2, 0, 0);
+// PointLight más suave para que los planetas no queden quemados
+const sunLight = new THREE.PointLight(0xfff2d6, 1.7, 0, 0);
 scene.add(sunLight);
-scene.add(new THREE.AmbientLight(0x202840, 0.55));
+// Ambient un poco más alto: la cara nocturna deja de ser negro absoluto
+scene.add(new THREE.AmbientLight(0x2a3358, 0.85));
 
-// Pequeña luz hemisférica para que la cara nocturna no quede en negro absoluto
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x101830, 0.08);
+// Luz hemisférica muy sutil para ese tinte azulado del espacio profundo
+const hemiLight = new THREE.HemisphereLight(0xb6ccff, 0x101830, 0.12);
 scene.add(hemiLight);
 
 // ---------- Fondo: estrellas ----------
@@ -175,19 +177,24 @@ function buildStars() {
 // ---------- Sol ----------
 function buildSun() {
   const data = SOLAR_DATA.sun;
-  const geo = new THREE.SphereGeometry(data.radius, 64, 64);
+  const geo = new THREE.SphereGeometry(data.radius, 96, 96);
   const mat = new THREE.MeshBasicMaterial({
     map: loadTex(data.texture),
-    color: 0xffffff,
+    color: 0xfff0c0, // ligeramente cálido pero no quemante
   });
   const sun = new THREE.Mesh(geo, mat);
   sun.name = 'sun';
   scene.add(sun);
 
-  // Glow del sol (sprite radial)
-  const glowGeo = new THREE.SphereGeometry(data.radius * 1.35, 32, 32);
+  // Glow del sol — más sutil para no eclipsar a los planetas
+  const glowGeo = new THREE.SphereGeometry(data.radius * 1.28, 32, 32);
   const glowMat = new THREE.ShaderMaterial({
-    uniforms: { c: { value: 0.6 }, p: { value: 4.5 }, glowColor: { value: new THREE.Color(0xffaa33) } },
+    uniforms: {
+      c: { value: 0.55 },
+      p: { value: 5.2 },
+      glowColor: { value: new THREE.Color(0xff9420) },
+      strength: { value: 0.55 }, // antes era 1.0 implícito
+    },
     vertexShader: `
       varying vec3 vNormal;
       void main() {
@@ -195,10 +202,10 @@ function buildSun() {
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }`,
     fragmentShader: `
-      uniform float c; uniform float p; uniform vec3 glowColor;
+      uniform float c; uniform float p; uniform vec3 glowColor; uniform float strength;
       varying vec3 vNormal;
       void main() {
-        float intensity = pow(c - dot(vNormal, vec3(0.0,0.0,1.0)), p);
+        float intensity = pow(c - dot(vNormal, vec3(0.0,0.0,1.0)), p) * strength;
         gl_FragColor = vec4(glowColor, 1.0) * intensity;
       }`,
     side: THREE.BackSide,
@@ -211,7 +218,7 @@ function buildSun() {
 
   state.bodies.push({
     mesh: sun,
-    info: { ...data, kind: 'sun' },
+    info: { ...data, id: 'sun', kind: 'sun' },
   });
   state.planets.sun = sun;
 }
@@ -236,8 +243,8 @@ function buildPlanet(data) {
   orbit.userData.isOrbit = true;
   scene.add(orbit);
 
-  // Planeta
-  const geo = new THREE.SphereGeometry(data.radius, 64, 64);
+  // Planeta — más resolución para que se vean los detalles de la textura
+  const geo = new THREE.SphereGeometry(data.radius, 96, 96);
   let mat;
 
   if (data.id === 'earth') {
@@ -260,14 +267,19 @@ function buildPlanet(data) {
     state.earthShader = mat;
   } else {
     const map = loadTex(data.texture);
+    // Emisivo muy sutil con el color del planeta para que la cara nocturna no quede en negro absoluto
+    const emissive = new THREE.Color(data.color || 0xffffff).multiplyScalar(0.08);
     mat = new THREE.MeshPhongMaterial({
       map,
       color: 0xffffff,
-      shininess: 6,
+      shininess: 14,
+      specular: 0x222233,
+      emissive,
+      emissiveIntensity: 0.6,
     });
     if (data.bump) {
       mat.bumpMap = loadTex(data.bump, { colorSpace: THREE.NoColorSpace });
-      mat.bumpScale = 0.04;
+      mat.bumpScale = 0.12; // antes 0.04 — ahora se notan las texturas
     }
   }
 
@@ -991,10 +1003,26 @@ function colorToHex(c) {
   return c || '#888';
 }
 
+// Body actualmente mostrado en la ficha (para que el botón de Enfocar sepa a quién apuntar)
+let currentInfoBodyId = null;
+
 function showInfoCard(info) {
   infoName.textContent = info.name;
   infoType.textContent = info.type || '';
   infoDesc.textContent = info.description || '';
+
+  // Guardar el id para el botón de enfoque
+  currentInfoBodyId = info.id || null;
+
+  // Mostrar/ocultar el botón de Enfocar (sólo planetas y el Sol tienen id válido)
+  const focusBtn = document.getElementById('info-focus');
+  if (focusBtn) {
+    if (currentInfoBodyId && state.planets[currentInfoBodyId]) {
+      focusBtn.classList.remove('hidden');
+    } else {
+      focusBtn.classList.add('hidden');
+    }
+  }
 
   // Swatch
   const hex = colorToHex(info.color || 0x6fb3ff);
@@ -1033,6 +1061,13 @@ function hideInfoCard() {
 }
 
 document.getElementById('info-close').addEventListener('click', hideInfoCard);
+
+// Botón "Enfocar" dentro de la ficha
+document.getElementById('info-focus')?.addEventListener('click', () => {
+  if (currentInfoBodyId && state.planets[currentInfoBodyId]) {
+    focusOn(currentInfoBodyId);
+  }
+});
 
 // ---------- UI bindings ----------
 const timeSpeed = document.getElementById('time-speed');
@@ -1091,33 +1126,59 @@ jumpBodies.forEach((b) => {
   planetJump.appendChild(btn);
 });
 
+// Estado de la animación de enfoque actual (para cancelarla si llega otra)
+let activeFocusId = null;
+
 function focusOn(id) {
   const target = state.planets[id];
   if (!target) return;
-  const targetPos = new THREE.Vector3();
-  target.getWorldPosition(targetPos);
 
-  // Calcular distancia adecuada al planeta
-  const radius = id === 'sun' ? 7 : (SOLAR_DATA.planets.find((p) => p.id === id)?.radius || 1);
-  const dist = Math.max(radius * 6, 8);
+  // Cancela cualquier focusOn en curso
+  activeFocusId = id;
+  const myFocusId = id;
 
-  // Animación suave de cámara
+  // Posición del planeta (puede estar en movimiento orbital)
+  const getTargetPos = () => {
+    const p = new THREE.Vector3();
+    target.getWorldPosition(p);
+    return p;
+  };
+
+  // Calcular distancia adecuada al astro
+  const radius = id === 'sun'
+    ? SOLAR_DATA.sun.radius
+    : (SOLAR_DATA.planets.find((p) => p.id === id)?.radius || 1);
+  // Distancia: 4× radio para gigantes, mínimo 6 unidades, más para el Sol
+  const dist = Math.max(radius * 4.5, id === 'sun' ? 26 : 6);
+
+  // Estado inicial
   const startPos = camera.position.clone();
   const startTarget = controls.target.clone();
-  const endPos = targetPos.clone().add(new THREE.Vector3(dist, dist * 0.5, dist));
-  const endTarget = targetPos.clone();
 
-  const duration = 1200;
+  // Vector de offset relativo al planeta (un poco arriba y al lado)
+  const offset = new THREE.Vector3(dist * 0.7, dist * 0.45, dist * 0.7);
+
+  const duration = 1800; // ms — más cinemático
   const t0 = performance.now();
+
   function step() {
+    if (activeFocusId !== myFocusId) return; // cancelado por otro focusOn
+
     const t = Math.min((performance.now() - t0) / duration, 1);
-    const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    // easeInOutCubic — arranque y final suaves, tránsito acelerado
+    const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    // Recalcular targetPos cada frame porque el planeta sigue orbitando
+    const targetPos = getTargetPos();
+    const endPos = targetPos.clone().add(offset);
+
     camera.position.lerpVectors(startPos, endPos, ease);
-    controls.target.lerpVectors(startTarget, endTarget, ease);
+    controls.target.lerpVectors(startTarget, targetPos, ease);
     controls.update();
+
     if (t < 1) requestAnimationFrame(step);
     else {
-      // Mostrar la ficha del objeto enfocado
+      activeFocusId = null;
       const body = state.bodies.find((b) => b.mesh === target);
       if (body) showInfoCard(body.info);
     }
