@@ -91,6 +91,8 @@ controls.minDistance = 4;
 controls.maxDistance = 700;
 controls.maxPolarAngle = Math.PI; // permitir mirar desde abajo también
 controls.target.set(0, 0, 0);
+// Zoom hacia donde apunta el cursor (no al centro de la pantalla)
+controls.zoomToCursor = true;
 
 // ---------- Loaders y progreso ----------
 const loadManager = new THREE.LoadingManager();
