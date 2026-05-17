@@ -207,7 +207,9 @@ function buildSun() {
       uniform float c; uniform float p; uniform vec3 glowColor; uniform float strength;
       varying vec3 vNormal;
       void main() {
-        float intensity = pow(c - dot(vNormal, vec3(0.0,0.0,1.0)), p) * strength;
+        // Clamp a positivo para evitar pow(negativo, fraccional) que produce NaN/sombras oscuras
+        float base = max(c - dot(vNormal, vec3(0.0,0.0,1.0)), 0.0);
+        float intensity = pow(base, p) * strength;
         gl_FragColor = vec4(glowColor, 1.0) * intensity;
       }`,
     side: THREE.BackSide,
