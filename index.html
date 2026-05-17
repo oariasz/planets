@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema Solar Interactivo · Estratek</title>
+  <meta name="description" content="Demostración interactiva del Sistema Solar — Estratek" />
+  <link rel="icon" type="image/svg+xml" href="assets/estratek-logo.svg" />
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Three.js como ES modules vía importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Pantalla de carga -->
+  <div id="loading-screen">
+    <div class="loader-logo">
+      <img src="assets/estratek-logo.svg" alt="Estratek" />
+    </div>
+    <div class="loader-bar"><div class="loader-bar-fill" id="loader-fill"></div></div>
+    <div class="loader-text" id="loader-text">Iniciando viaje cósmico…</div>
+  </div>
+
+  <!-- Canvas principal -->
+  <canvas id="scene"></canvas>
+
+  <!-- Top bar -->
+  <header class="topbar glass">
+    <div class="brand">
+      <img src="assets/estratek-logo.svg" alt="Estratek" class="brand-logo" />
+      <div class="brand-text">
+        <div class="brand-title">Sistema Solar Interactivo</div>
+        <div class="brand-sub">Demostración · Estratek</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="chip" id="btn-help" title="Cómo usar">
+        <span class="chip-icon">?</span>
+        <span>Ayuda</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Panel izquierdo: controles -->
+  <aside class="panel panel-left glass" id="panel-controls">
+    <div class="panel-header">
+      <span class="panel-title">Controles</span>
+    </div>
+
+    <div class="control-group">
+      <label class="ctrl-label">Velocidad del tiempo</label>
+      <input type="range" id="time-speed" min="0" max="10" step="0.1" value="1" />
+      <div class="ctrl-value"><span id="time-speed-val">1×</span></div>
+    </div>
+
+    <div class="control-group">
+      <label class="ctrl-label">Mostrar</label>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="toggle-orbits" checked /><span>Órbitas</span></label>
+        <label class="switch"><input type="checkbox" id="toggle-labels" checked /><span>Etiquetas</span></label>
+      </div>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="toggle-asteroids" checked /><span>Cinturón asteroides</span></label>
+        <label class="switch"><input type="checkbox" id="toggle-moons" checked /><span>Lunas</span></label>
+      </div>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="toggle-iss" checked /><span>Estación ISS</span></label>
+        <label class="switch"><input type="checkbox" id="toggle-stars" checked /><span>Estrellas</span></label>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="ctrl-label">Eventos espaciales</label>
+      <button class="btn-action" id="btn-halley">
+        <span class="btn-icon">☄️</span>
+        <span>Cometa Halley</span>
+      </button>
+      <button class="btn-action" id="btn-comets">
+        <span class="btn-icon">✨</span>
+        <span>Lluvia de cometas</span>
+      </button>
+      <button class="btn-action" id="btn-launch">
+        <span class="btn-icon">🚀</span>
+        <span>Lanzar satélite</span>
+      </button>
+      <button class="btn-action ghost" id="btn-reset">
+        <span class="btn-icon">↺</span>
+        <span>Reiniciar vista</span>
+      </button>
+    </div>
+
+    <div class="control-group">
+      <label class="ctrl-label">Saltar a</label>
+      <div class="planet-jump" id="planet-jump"></div>
+    </div>
+  </aside>
+
+  <!-- Panel derecho: ficha del astro -->
+  <aside class="panel panel-right glass hidden" id="info-card">
+    <button class="close-btn" id="info-close" aria-label="Cerrar">×</button>
+    <div class="info-header">
+      <div class="info-swatch" id="info-swatch"></div>
+      <div>
+        <div class="info-type" id="info-type">Planeta</div>
+        <h2 class="info-name" id="info-name">—</h2>
+      </div>
+    </div>
+    <p class="info-desc" id="info-desc"></p>
+    <div class="info-grid" id="info-grid"></div>
+    <div class="info-fact" id="info-fact"></div>
+  </aside>
+
+  <!-- HUD inferior -->
+  <footer class="hud glass">
+    <div class="hud-item">
+      <span class="hud-label">Fecha simulada</span>
+      <span class="hud-value" id="hud-date">—</span>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-item">
+      <span class="hud-label">FPS</span>
+      <span class="hud-value" id="hud-fps">—</span>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-item hud-hint">
+      <kbd>Scroll</kbd> zoom · <kbd>Click + arrastrar</kbd> rotar · <kbd>Click derecho</kbd> mover
+    </div>
+  </footer>
+
+  <!-- Tooltip flotante para hover sobre planetas -->
+  <div id="tooltip" class="tooltip hidden"></div>
+
+  <!-- Modal de ayuda -->
+  <div id="help-modal" class="modal hidden">
+    <div class="modal-content glass">
+      <button class="close-btn" id="help-close" aria-label="Cerrar">×</button>
+      <h2>Cómo navegar el Sistema Solar</h2>
+      <ul class="help-list">
+        <li><strong>Rueda del ratón:</strong> hacer zoom in / zoom out.</li>
+        <li><strong>Click izquierdo + arrastrar:</strong> rotar la cámara alrededor del Sol.</li>
+        <li><strong>Click derecho + arrastrar:</strong> mover (paneo) la cámara.</li>
+        <li><strong>Hover sobre un astro:</strong> muestra una etiqueta flotante.</li>
+        <li><strong>Click sobre un astro:</strong> abre la ficha completa con datos.</li>
+        <li><strong>Velocidad del tiempo:</strong> acelera la órbita de los planetas.</li>
+        <li><strong>Cometa Halley / Lluvia / Satélite:</strong> dispara eventos animados.</li>
+      </ul>
+      <div class="modal-footer">
+        <span>Una demostración de <strong>Estratek</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
