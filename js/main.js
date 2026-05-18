@@ -507,28 +507,28 @@ function spawnComet(cometData) {
   const group = new THREE.Group();
   group.name = `comet-${cometData.name}`;
 
-  // Núcleo
+  // Núcleo — más grande y emisivo para ser visible a distancia
   const nucleus = new THREE.Mesh(
-    new THREE.SphereGeometry(0.4, 16, 16),
+    new THREE.SphereGeometry(1.0, 24, 24),
     new THREE.MeshBasicMaterial({ color: cometData.color })
   );
   group.add(nucleus);
 
-  // Cola de partículas
-  const tailCount = 400;
+  // Cola de partículas — más larga, más densa, más visible
+  const tailCount = 800;
   const tailGeo = new THREE.BufferGeometry();
   const tailPositions = new Float32Array(tailCount * 3);
   const tailColors = new Float32Array(tailCount * 3);
 
   for (let i = 0; i < tailCount; i++) {
     const t = i / tailCount;
-    const spread = 0.5 + t * 2.5;
-    tailPositions[i * 3]     = -t * 18 + (Math.random() - 0.5) * spread;
+    const spread = 1.2 + t * 6.0;
+    tailPositions[i * 3]     = -t * 50 + (Math.random() - 0.5) * spread;
     tailPositions[i * 3 + 1] = (Math.random() - 0.5) * spread;
     tailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread;
 
     const c = new THREE.Color(cometData.color);
-    const fade = 1 - t;
+    const fade = 1 - t * 0.85;
     tailColors[i * 3] = c.r * fade;
     tailColors[i * 3 + 1] = c.g * fade;
     tailColors[i * 3 + 2] = c.b * fade;
@@ -537,26 +537,26 @@ function spawnComet(cometData) {
   tailGeo.setAttribute('color', new THREE.BufferAttribute(tailColors, 3));
 
   const tailMat = new THREE.PointsMaterial({
-    size: 0.45,
+    size: 0.9,
     vertexColors: true,
     transparent: true,
-    opacity: 0.85,
+    opacity: 0.9,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
   const tail = new THREE.Points(tailGeo, tailMat);
   group.add(tail);
 
-  // Halo brillante
+  // Halo brillante grande para ser visible a cualquier distancia
   const haloMat = new THREE.SpriteMaterial({
     color: cometData.color,
     blending: THREE.AdditiveBlending,
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.7,
     depthWrite: false,
   });
   const halo = new THREE.Sprite(haloMat);
-  halo.scale.set(3, 3, 1);
+  halo.scale.set(8, 8, 1);
   group.add(halo);
 
   scene.add(group);
@@ -605,17 +605,19 @@ function updateComets(dt) {
       continue;
     }
 
-    // Elipse: pasa cerca del sol y se aleja
+    // Trayectoria elíptica cinemática — siempre dentro del área visible del usuario
     const a = c.data.semiMajor;
     const e = c.data.eccentricity;
     const incl = THREE.MathUtils.degToRad(c.data.inclination);
-    const theta = c.startAngle + progress * Math.PI * 1.4 - Math.PI * 0.7;
+    // Sweep amplio para que el cometa atraviese toda la escena
+    const theta = c.startAngle + progress * Math.PI * 1.6 - Math.PI * 0.8;
     const r = (a * (1 - e * e)) / (1 + e * Math.cos(theta));
-    const scaledR = Math.min(r, 280) * 0.4;
+    // Clamp para mantenerlo visible: nunca más cerca de 12 ni más lejos de 130 del sol
+    const scaledR = THREE.MathUtils.clamp(r * 0.5, 12, 130);
 
     const x = scaledR * Math.cos(theta);
     const z = scaledR * Math.sin(theta);
-    const y = z * Math.sin(incl) * 0.3;
+    const y = z * Math.sin(incl) * 0.25 + 8 * Math.sin(progress * Math.PI); // pequeño arco para dar drama
     const zRot = z * Math.cos(incl);
 
     c.group.position.set(x, y, zRot);
@@ -641,25 +643,52 @@ function launchSatellite() {
   if (!earth) return;
 
   const sat = new THREE.Group();
+  // Cuerpo central — emisivo para que se vea como un punto brillante
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.06, 0.06),
-    new THREE.MeshPhongMaterial({ color: 0xeeeeee, shininess: 50 })
+    new THREE.BoxGeometry(0.4, 0.25, 0.25),
+    new THREE.MeshPhongMaterial({
+      color: 0xffffff,
+      emissive: 0xffaa66,
+      emissiveIntensity: 1.5,
+      shininess: 80,
+    })
   );
   sat.add(body);
-  const panel = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.2, 0.05),
-    new THREE.MeshPhongMaterial({ color: 0x2a4d8f, side: THREE.DoubleSide })
-  );
-  sat.add(panel);
+  // Paneles solares grandes
+  const panelMat = new THREE.MeshPhongMaterial({
+    color: 0x2a4d8f,
+    emissive: 0x0a1a3a,
+    shininess: 100,
+    side: THREE.DoubleSide,
+  });
+  const panelL = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.3), panelMat);
+  panelL.position.x = -0.55;
+  sat.add(panelL);
+  const panelR = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.3), panelMat);
+  panelR.position.x = 0.55;
+  sat.add(panelR);
 
-  // Trail
+  // Halo brillante alrededor del satélite (visible desde lejos)
+  const haloMat = new THREE.SpriteMaterial({
+    color: 0xffcc88,
+    blending: THREE.AdditiveBlending,
+    transparent: true,
+    opacity: 0.85,
+    depthWrite: false,
+  });
+  const halo = new THREE.Sprite(haloMat);
+  halo.scale.set(2.5, 2.5, 1);
+  sat.add(halo);
+
+  // Trail más visible y largo
   const trailGeo = new THREE.BufferGeometry();
-  const trailPositions = new Float32Array(80 * 3);
+  const trailPositions = new Float32Array(160 * 3);
   trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
   const trailMat = new THREE.LineBasicMaterial({
-    color: 0xff8855,
+    color: 0xff7733,
     transparent: true,
-    opacity: 0.8,
+    opacity: 0.95,
+    linewidth: 3,
   });
   const trail = new THREE.Line(trailGeo, trailMat);
   scene.add(trail);
@@ -678,7 +707,7 @@ function launchSatellite() {
     trailIdx: 0,
     t: 0,
     phase: 'launch',     // launch -> orbit
-    targetAltitude: 2.5,
+    targetAltitude: 4.5,   // más alto para que sea visible alrededor de la Tierra
     angle: 0,
   });
 }
