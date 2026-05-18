@@ -84,6 +84,9 @@
         <label class="switch"><input type="checkbox" id="toggle-iss" checked /><span>Estación ISS</span></label>
         <label class="switch"><input type="checkbox" id="toggle-stars" checked /><span>Estrellas</span></label>
       </div>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="toggle-neighbors" checked /><span>Vecinos estelares</span></label>
+      </div>
     </div>
 
     <div class="control-group">
@@ -151,6 +154,9 @@
   <!-- Tooltip flotante para hover sobre planetas -->
   <div id="tooltip" class="tooltip hidden"></div>
 
+  <!-- Overlay de etiquetas para vecinos estelares (cada label se posiciona dinámicamente) -->
+  <div id="neighbors-overlay"></div>
+
   <!-- Watermark permanente: logo Estratek discreto en esquina inferior derecha -->
   <a href="https://estratekdata.com" target="_blank" rel="noopener" id="logo-watermark" title="Estratek">
     <img src="assets/estratek-logo.png" alt="Estratek" />
@@ -168,6 +174,7 @@
         <li><strong>Hover sobre un astro:</strong> muestra una etiqueta flotante.</li>
         <li><strong>Click sobre un astro:</strong> abre la ficha completa con datos.</li>
         <li><strong>Velocidad del tiempo:</strong> acelera la órbita de los planetas.</li>
+        <li><strong>Aleja la cámara:</strong> revela las estrellas vecinas más cercanas al Sol.</li>
         <li><strong>Cometa Halley / Lluvia / Satélite:</strong> dispara eventos animados.</li>
       </ul>
       <div class="modal-footer">
