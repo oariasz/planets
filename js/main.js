@@ -61,8 +61,8 @@ const camera = new THREE.PerspectiveCamera(
 );
 
 // Posiciones clave de cámara
-const CAMERA_START = new THREE.Vector3(0, 280, 1200); // muy lejos, intro
-const CAMERA_END   = new THREE.Vector3(0, 50, 90);    // posición normal de uso
+const CAMERA_START = new THREE.Vector3(0, 280, 1200);  // muy lejos, intro
+const CAMERA_END   = new THREE.Vector3(0, 110, 260);   // posición normal — encuadra los 8 planetas
 camera.position.copy(CAMERA_START);
 
 // Marca body en modo intro hasta que la animación cinemática termine
@@ -344,9 +344,13 @@ function buildPlanet(data) {
     }
     const ringMat = new THREE.MeshBasicMaterial({
       map: loadTex(data.rings.texture),
+      // alphaMap usa el pattern para hacer transparentes las separaciones del anillo
+      alphaMap: data.rings.alphaTexture
+        ? loadTex(data.rings.alphaTexture, { colorSpace: THREE.NoColorSpace })
+        : null,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.95,
       depthWrite: false,
     });
     const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -1111,7 +1115,7 @@ document.getElementById('btn-launch').addEventListener('click', () => {
   launchSatellite();
 });
 document.getElementById('btn-reset').addEventListener('click', () => {
-  camera.position.set(0, 50, 90);
+  camera.position.copy(CAMERA_END);
   controls.target.set(0, 0, 0);
   controls.update();
   hideInfoCard();
