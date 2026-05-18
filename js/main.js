@@ -222,6 +222,13 @@ function buildSun() {
   const glow = new THREE.Mesh(glowGeo, glowMat);
   sun.add(glow);
 
+  // Guardamos refs para poder modular intensidad / radio cuando la cámara
+  // se acerca demasiado y quedaría dentro de la esfera del halo (que produce
+  // un crescent asimétrico al ver los polígonos internos del BackSide).
+  state.sunGlow = glow;
+  state.sunGlowRadius = data.radius * 1.28;
+  state.sunGlowBaseStrength = 0.55;
+
   state.bodies.push({
     mesh: sun,
     info: { ...data, id: 'sun', kind: 'sun' },
@@ -430,7 +437,15 @@ function buildAsteroids() {
     positions[i * 3 + 1] = y;
     positions[i * 3 + 2] = r * Math.sin(theta);
 
-    const c = new THREE.Color().setHSL(0.08, 0.3, 0.4 + Math.random() * 0.25);
+    // Tonos grises con saturación muy baja (asteroides son rocas, no naranjas).
+    // Hue varía sutilmente entre gris-cálido y gris-frío; saturación 0.03-0.08
+    // mantiene el tinte casi imperceptible; luminosidad media para verse contra
+    // el fondo oscuro.
+    const c = new THREE.Color().setHSL(
+      0.05 + Math.random() * 0.10,
+      0.03 + Math.random() * 0.05,
+      0.32 + Math.random() * 0.28
+    );
     colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
     sizes[i] = 0.25 + Math.random() * 0.45;
   }
@@ -1420,6 +1435,29 @@ function animate() {
 
   // Rotación del Sol
   if (state.planets.sun) state.planets.sun.rotation.y += dt * 0.05;
+
+  // Halo del Sol: desvanecer cuando la cámara se mete dentro de la esfera
+  // del glow (evita el crescent asimétrico al ver los polígonos internos
+  // del BackSide desde dentro). Fade-in suave hacia afuera.
+  if (state.sunGlow) {
+    const sunPos = new THREE.Vector3();
+    state.planets.sun.getWorldPosition(sunPos);
+    const camDist = camera.position.distanceTo(sunPos);
+    const glowR = state.sunGlowRadius;
+    // Empieza a fade-out cuando estás a 2× el radio, totalmente apagado
+    // cuando estás a 0.95× el radio (dentro de la esfera).
+    const fadeStart = glowR * 2.0;
+    const fadeEnd   = glowR * 0.95;
+    let visibility = 1;
+    if (camDist < fadeStart) {
+      visibility = Math.max(0, (camDist - fadeEnd) / (fadeStart - fadeEnd));
+      // smoothstep para que la transición no se note
+      visibility = visibility * visibility * (3 - 2 * visibility);
+    }
+    state.sunGlow.material.uniforms.strength.value = state.sunGlowBaseStrength * visibility;
+    // También ocultar completamente cuando está totalmente apagado
+    state.sunGlow.visible = visibility > 0.001;
+  }
 
   // Lunas
   state.planets.earth?.children.forEach((child) => {
