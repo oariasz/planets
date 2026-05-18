@@ -325,6 +325,127 @@ export const COMETS = [
   },
 ];
 
+// ----- Vecinos estelares (las estrellas más cercanas al Sol) -----
+// Direcciones reales en coordenadas ecuatoriales (RA/Dec) → se convierten en
+// vectores unitarios en main.js y se colocan en una "esfera celeste" alrededor
+// del sistema solar visual. La distancia en años luz es solo para la etiqueta;
+// todos los marcadores están a la misma distancia visual para que se vean.
+//
+// raH:   ascensión recta en horas decimales (0–24)
+// decD:  declinación en grados decimales (-90 a +90)
+// ly:    distancia real en años luz
+// hex:   color que evoca la clase espectral
+export const NEARBY_STARS = [
+  {
+    name: 'Próxima Centauri',
+    raH: 14.4960,
+    decD: -62.6794,
+    ly: 4.24,
+    hex: 0xffb070,
+    spectral: 'M5.5Ve',
+    note: 'Estrella más cercana al Sol. Tiene un exoplaneta en zona habitable: Próxima b.',
+  },
+  {
+    name: 'α Centauri A',
+    raH: 14.6601,
+    decD: -60.8354,
+    ly: 4.37,
+    hex: 0xfff2cf,
+    spectral: 'G2V',
+    note: 'Casi gemela del Sol. Forma un sistema triple con α Cen B y Próxima.',
+  },
+  {
+    name: 'α Centauri B',
+    raH: 14.6634,
+    decD: -60.8389,
+    ly: 4.37,
+    hex: 0xffd6a8,
+    spectral: 'K1V',
+    note: 'Compañera de α Cen A. Forman una binaria que orbita en 80 años.',
+  },
+  {
+    name: 'Estrella de Barnard',
+    raH: 17.9636,
+    decD: 4.6928,
+    ly: 5.96,
+    hex: 0xff8855,
+    spectral: 'M4V',
+    note: 'Enana roja con el mayor movimiento propio del cielo. Cruza un grado cada 350 años.',
+  },
+  {
+    name: 'Wolf 359',
+    raH: 10.9069,
+    decD: 7.0144,
+    ly: 7.86,
+    hex: 0xff7744,
+    spectral: 'M6V',
+    note: 'Enana roja extremadamente débil. Solo se descubrió en 1918.',
+  },
+  {
+    name: 'Lalande 21185',
+    raH: 11.0526,
+    decD: 35.9700,
+    ly: 8.31,
+    hex: 0xff9966,
+    spectral: 'M2V',
+    note: 'Enana roja con al menos un exoplaneta confirmado.',
+  },
+  {
+    name: 'Sirio',
+    raH: 6.7525,
+    decD: -16.7161,
+    ly: 8.66,
+    hex: 0xcfe0ff,
+    spectral: 'A1V',
+    note: 'La estrella más brillante del cielo nocturno. Tiene una enana blanca compañera.',
+  },
+  {
+    name: 'Luyten 726-8',
+    raH: 1.6428,
+    decD: -17.9504,
+    ly: 8.79,
+    hex: 0xff8866,
+    spectral: 'M5.5V',
+    note: 'Sistema binario de dos enanas rojas. Una es famosa estrella fulgurante.',
+  },
+  {
+    name: 'Ross 154',
+    raH: 18.8231,
+    decD: -23.8364,
+    ly: 9.69,
+    hex: 0xff8855,
+    spectral: 'M3.5V',
+    note: 'Enana roja con erupciones de fulguración intensas.',
+  },
+  {
+    name: 'Epsilon Eridani',
+    raH: 3.5483,
+    decD: -9.4583,
+    ly: 10.49,
+    hex: 0xffc488,
+    spectral: 'K2V',
+    note: 'Estrella joven similar al Sol. Tiene un exoplaneta confirmado y un disco de polvo.',
+  },
+  {
+    name: 'Tau Ceti',
+    raH: 1.7344,
+    decD: -15.9375,
+    ly: 11.91,
+    hex: 0xfff0bf,
+    spectral: 'G8V',
+    note: 'Análoga solar. Candidata histórica para SETI por su similitud con el Sol.',
+  },
+  {
+    name: 'Procyon',
+    raH: 7.6553,
+    decD: 5.2250,
+    ly: 11.46,
+    hex: 0xfff8e0,
+    spectral: 'F5IV-V',
+    note: 'Estrella binaria. Forma con Sirio y Betelgeuse el "Triángulo de Invierno".',
+  },
+];
+
 // ----- ISS Estación Espacial Internacional -----
 export const ISS_INFO = {
   name: 'Estación Espacial Internacional',
