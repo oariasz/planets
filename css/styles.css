@@ -599,10 +599,9 @@ input[type="range"]::-moz-range-thumb {
   z-index: 11; /* por encima del HUD pero sin tapar contenido */
   display: block;
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(0);
   transition:
-    opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.6s,
-    transform 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.6s,
+    opacity 1.0s cubic-bezier(0.22, 1, 0.36, 1),
     filter 0.3s ease;
   pointer-events: auto;
   text-decoration: none;
@@ -670,10 +669,10 @@ body:not(.intro-active) #logo-watermark {
 #intro-overlay.intro-leave #intro-logo {
   /* Trasladar centro desde (50vw, 50vh) hasta (100vw - 70px, 100vh - 42px) — posición del watermark.
      Luego escalar a 13% (~96 / 720 ≈ tamaño del watermark).
-     Acaba con la misma opacidad y glow que el watermark para un handoff visual limpio. */
-  opacity: 0.75;
+     Acaba en opacity 0: el watermark fade-in cubre la posición sin doble-imagen ni flickering. */
+  opacity: 0;
   transform: translate(calc(50vw - 70px), calc(50vh - 42px)) scale(0.13);
-  filter: drop-shadow(0 0 10px rgba(111, 179, 255, 0.28));
+  filter: drop-shadow(0 0 0 rgba(255,255,255,0));
   transition:
     opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1),
     transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
